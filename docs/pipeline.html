@@ -1,0 +1,625 @@
+<title>Tankou capture pipeline</title>
+
+<style>
+  :root {
+    --bg:        #F4F5F7;
+    --surface:   #FFFFFF;
+    --sunk:      #ECEEF2;
+    --text:      #171A21;
+    --muted:     #5A6270;
+    --faint:     #8B93A1;
+    --border:    #D6DAE2;
+    --indigo:    #2B4A8F;
+    --indigo-bg: #E8EDF8;
+    --gold:      #8A6011;
+    --gold-bg:   #F7EFDD;
+    --bad:       #A33A3A;
+    --bad-bg:    #F7E6E6;
+
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:  ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+    --jp:    "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #0F1218;
+      --surface:   #161A22;
+      --sunk:      #1B2029;
+      --text:      #E5E9F0;
+      --muted:     #99A2B2;
+      --faint:     #6D7686;
+      --border:    #2A313C;
+      --indigo:    #86A7EA;
+      --indigo-bg: #1A2438;
+      --gold:      #D9AC55;
+      --gold-bg:   #2A2317;
+      --bad:       #E08A8A;
+      --bad-bg:    #331E1E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #0F1218;
+    --surface:   #161A22;
+    --sunk:      #1B2029;
+    --text:      #E5E9F0;
+    --muted:     #99A2B2;
+    --faint:     #6D7686;
+    --border:    #2A313C;
+    --indigo:    #86A7EA;
+    --indigo-bg: #1A2438;
+    --gold:      #D9AC55;
+    --gold-bg:   #2A2317;
+    --bad:       #E08A8A;
+    --bad-bg:    #331E1E;
+  }
+
+  :root[data-theme="light"] {
+    --bg:        #F4F5F7;
+    --surface:   #FFFFFF;
+    --sunk:      #ECEEF2;
+    --text:      #171A21;
+    --muted:     #5A6270;
+    --faint:     #8B93A1;
+    --border:    #D6DAE2;
+    --indigo:    #2B4A8F;
+    --indigo-bg: #E8EDF8;
+    --gold:      #8A6011;
+    --gold-bg:   #F7EFDD;
+    --bad:       #A33A3A;
+    --bad-bg:    #F7E6E6;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 960px; margin: 0 auto; padding: 72px 28px 120px; }
+  .col  { max-width: 64ch; }
+
+  header.masthead { margin-bottom: 64px; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--indigo); margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: var(--serif); font-size: clamp(34px, 5vw, 46px);
+    line-height: 1.1; font-weight: 600; letter-spacing: -.015em;
+    text-wrap: balance; margin-bottom: 18px;
+  }
+
+  .standfirst { font-size: 18px; color: var(--muted); max-width: 56ch; text-wrap: pretty; }
+
+  h2 {
+    font-family: var(--serif); font-size: 27px; font-weight: 600;
+    letter-spacing: -.01em; text-wrap: balance; margin-bottom: 8px;
+  }
+
+  h3 { font-size: 14px; font-weight: 700; letter-spacing: .04em; margin-bottom: 6px; }
+
+  section { margin-top: 68px; }
+  .lede { color: var(--muted); margin-bottom: 28px; }
+  p { margin-bottom: 16px; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 650; }
+
+  code {
+    font-family: var(--mono); font-size: .89em;
+    background: var(--sunk); border: 1px solid var(--border);
+    border-radius: 4px; padding: .1em .35em;
+  }
+
+  .jp { font-family: var(--jp); }
+
+  figure.fig {
+    margin: 36px 0 30px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 26px 24px 20px; overflow-x: auto;
+  }
+
+  figure.fig svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+  figcaption {
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-size: 13.5px; line-height: 1.6; color: var(--muted); text-wrap: pretty;
+  }
+
+  figcaption b { color: var(--text); font-weight: 650; }
+
+  .fig text { font-family: var(--sans); fill: var(--text); }
+  .box-n     { fill: var(--indigo-bg); stroke: var(--indigo); stroke-width: 1.4; }
+  .box-w     { fill: var(--gold-bg);   stroke: var(--gold);   stroke-width: 1.4; }
+  .box-p     { fill: var(--surface);   stroke: var(--indigo); stroke-width: 2; }
+  .box-bad   { fill: var(--bad-bg);    stroke: var(--bad);    stroke-width: 1.4; }
+  .frame     { fill: var(--sunk); stroke: var(--faint); stroke-width: 1.4; }
+  .glyph     { fill: var(--faint); }
+  .glyph-hot { fill: var(--text); }
+  .t-title   { font-size: 13px; font-weight: 650; }
+  .t-sub     { font-size: 10.5px; fill: var(--muted); }
+  .t-lane    { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+  .lane-n    { fill: var(--indigo); }
+  .lane-w    { fill: var(--gold); }
+  .t-arrow   { font-size: 10px; fill: var(--muted); }
+  .t-tick    { font-size: 9px; fill: var(--faint); font-family: var(--mono); }
+  .t-blk     { font-size: 10.5px; font-family: var(--mono); }
+  .t-field   { font-size: 11.5px; font-family: var(--mono); }
+  .t-ex      { font-size: 11px; fill: var(--muted); }
+  .t-ex.jp   { font-family: var(--jp); font-size: 12px; }
+  .t-mono    { font-family: var(--mono); }
+  .flow      { fill: none; stroke: var(--faint); stroke-width: 1.5; }
+  .ahead     { fill: var(--faint); }
+  .bound     { stroke: var(--faint); stroke-width: 1.4; stroke-dasharray: 5 5; }
+  .t-bound   { font-size: 10px; fill: var(--faint); letter-spacing: .04em; }
+  .axis      { stroke: var(--border); stroke-width: 1.2; }
+  .tick      { stroke: var(--faint); stroke-width: 1.2; }
+  .tick-dim  { stroke: var(--border); stroke-width: 1.2; }
+  .tick-hot  { stroke: var(--indigo); stroke-width: 2; }
+  .lead      { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 3 3; }
+  .rowline   { stroke: var(--border); stroke-width: 1; }
+  .fname-n   { fill: var(--indigo); }
+  .fname-w   { fill: var(--gold); }
+  .ocrbox    { fill: none; stroke: var(--indigo); stroke-width: 2; }
+  .ghostbox  { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 4 3; }
+
+  pre {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 22px; overflow-x: auto;
+    margin: 26px 0; font-size: 13px; line-height: 1.7;
+  }
+
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+  .cm { color: var(--faint); }
+  .kw { color: var(--indigo); font-weight: 600; }
+
+  dl.notes {
+    display: grid; grid-template-columns: minmax(150px, 210px) 1fr;
+    gap: 14px 26px; margin: 26px 0 0; font-size: 15px;
+  }
+
+  dl.notes dt { font-weight: 650; color: var(--indigo); line-height: 1.5; }
+  dl.notes dt.w { color: var(--gold); }
+  dl.notes dd { margin: 0; color: var(--muted); line-height: 1.55; }
+
+  @media (max-width: 620px) {
+    dl.notes { grid-template-columns: 1fr; gap: 4px; }
+    dl.notes dd { margin-bottom: 14px; }
+    .wrap { padding: 48px 20px 80px; }
+  }
+
+  ul.tight { margin: 0 0 16px 0; padding-left: 22px; }
+  ul.tight li { margin-bottom: 9px; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead col">
+    <div class="eyebrow">Tankou · architecture reference</div>
+    <h1>From viewfinder to flashcard</h1>
+    <p class="standfirst">
+      How a photograph of Japanese text becomes an Anki card — where the work happens,
+      what crosses the native-to-web boundary, and what the card builder actually receives.
+    </p>
+  </header>
+
+  <section>
+    <div class="col">
+      <h2>The pipeline</h2>
+      <p class="lede">
+        The flow crosses exactly one architectural boundary, and stays on exactly one camera stream.
+        Both constraints do real work.
+      </p>
+    </div>
+
+    <figure class="fig">
+      <svg viewBox="0 0 480 900" role="img" aria-label="Vertical flow of the Tankou pipeline. Four native stages: camera preview, live OCR at about eight frames per second with two-frame confirmation, freeze on the current preview frame with a final OCR pass, and tokenisation with NMeCab. A dashed boundary marks the handoff through a dependency-injection singleton. Then four Blazor stages: word boxes with a selectable sentence, sentence translation, term lookup, and the user picking a sense. The flow emits a CardRequest payload.">
+        <defs>
+          <marker id="ah1" viewBox="0 0 8 6" refX="7.5" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+            <polygon class="ahead" points="0,0 8,3 0,6"/>
+          </marker>
+        </defs>
+
+        <text class="t-lane lane-n" x="50" y="36">Live phase · native</text>
+
+        <rect class="box-n" x="50" y="52" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="76">Camera preview</text>
+        <text class="t-sub" x="68" y="94">SkiaCamera — opens on launch, no home screen</text>
+
+        <path class="flow" d="M240 110 L240 137" marker-end="url(#ah1)"/>
+
+        <rect class="box-n" x="50" y="140" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="164">Live OCR ≈ 8 fps → confirmed boxes</text>
+        <text class="t-sub" x="68" y="182">a box appears only after 2 consecutive hits</text>
+
+        <path class="flow" d="M240 198 L240 225" marker-end="url(#ah1)"/>
+        <text class="t-arrow" x="252" y="216">user taps capture</text>
+
+        <rect class="box-n" x="50" y="228" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="252">Freeze the preview frame</text>
+        <text class="t-sub" x="68" y="270">final unthrottled OCR pass, same stream</text>
+
+        <path class="flow" d="M240 286 L240 313" marker-end="url(#ah1)"/>
+
+        <rect class="box-n" x="50" y="316" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="340">Tokenise</text>
+        <text class="t-sub" x="68" y="358">NMeCab — coords normalised to 0–1 here</text>
+
+        <path class="flow" d="M240 374 L240 441" marker-end="url(#ah1)"/>
+
+        <line class="bound" x1="20" y1="400" x2="460" y2="400"/>
+        <text class="t-bound" x="50" y="393">handoff · DI singleton</text>
+
+        <text class="t-lane lane-w" x="50" y="430">Frozen phase · Blazor</text>
+
+        <rect class="box-w" x="50" y="444" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="468">Word boxes + selectable sentence</text>
+        <text class="t-sub" x="68" y="486">frozen JPEG in the WebView; HTML text selection</text>
+
+        <path class="flow" d="M240 502 L240 529" marker-end="url(#ah1)"/>
+
+        <rect class="box-w" x="50" y="532" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="556">Sentence translation</text>
+        <text class="t-sub" x="68" y="574">one model call, fired on box tap</text>
+
+        <path class="flow" d="M240 590 L240 617" marker-end="url(#ah1)"/>
+
+        <rect class="box-w" x="50" y="620" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="644">Term lookup</text>
+        <text class="t-sub" x="68" y="662">JMdict senses, ranked against the sentence</text>
+
+        <path class="flow" d="M240 678 L240 705" marker-end="url(#ah1)"/>
+
+        <rect class="box-w" x="50" y="708" width="380" height="58" rx="7"/>
+        <text class="t-title" x="68" y="732">User picks a sense</text>
+        <text class="t-sub" x="68" y="750">primary translation, plus alternatives</text>
+
+        <path class="flow" d="M240 766 L240 797" marker-end="url(#ah1)"/>
+        <text class="t-arrow" x="252" y="786">emits</text>
+
+        <rect class="box-p" x="50" y="800" width="380" height="66" rx="8"/>
+        <text class="t-title t-mono" x="68" y="826">CardRequest</text>
+        <text class="t-sub" x="68" y="846">→ audio sourcing → Anki card</text>
+      </svg>
+
+      <figcaption>
+        The single boundary sits between <b>tokenise</b> and <b>word boxes</b>. Above it, everything
+        needs the camera or a platform library; below it, everything is a static image plus
+        coordinates, which the WebView renders better than native code could.
+      </figcaption>
+    </figure>
+
+    <div class="col">
+      <dl class="notes">
+        <dt>Camera preview</dt>
+        <dd>Opens on launch — the fast workflow depends on skipping a home screen entirely.</dd>
+
+        <dt>Confirmed boxes</dt>
+        <dd>A box is a promise that OCR has read that sentence, so it should not appear on a single
+            lucky frame. Requiring two consecutive recognitions kills the jitter and makes the
+            promise mean something.</dd>
+
+        <dt>Freeze</dt>
+        <dd>Takes the current preview frame, not a separate still. One stream means the boxes the
+            user was looking at are exactly the boxes they get.</dd>
+
+        <dt>Tokenise</dt>
+        <dd>Normalise every box to 0–1 coordinates here, before several coordinate spaces have a
+            chance to get mixed up.</dd>
+
+        <dt class="w">Word boxes</dt>
+        <dd>Drag-selection, selection handles and <code>window.getSelection()</code> come free in a
+            WebView. Rebuilding them natively is weeks of work for a worse result.</dd>
+
+        <dt class="w">Term lookup</dt>
+        <dd>Debounce ~250 ms, cancel in-flight requests, cache per term-and-sentence pair.
+            Without this, dragging a selection fires a lookup per character crossed.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>One stream, not two</h2>
+      <p class="lede">
+        The obvious design captures a high-resolution still on tap and re-runs OCR on it. That
+        breaks the boxes, and it breaks the promise they make.
+      </p>
+    </div>
+
+    <figure class="fig">
+      <svg viewBox="0 0 720 300" role="img" aria-label="Two camera frames side by side showing the same scene. The preview stream is 16 by 9 with a stabilisation crop, and a box from live OCR sits tightly around a line of text. The still capture is 4 by 3 with a wider field of view, so the same normalised rectangle lands above and beside the text rather than on it.">
+        <text class="t-lane lane-n" x="50" y="36">Preview stream · 16:9, stabilised crop</text>
+
+        <rect class="frame" x="50" y="56" width="280" height="158" rx="5"/>
+        <rect class="glyph" x="80" y="88"  width="196" height="9" rx="2"/>
+        <rect class="glyph-hot" x="80" y="130" width="200" height="14" rx="2"/>
+        <rect class="glyph" x="80" y="170" width="150" height="9" rx="2"/>
+        <rect class="ocrbox" x="74" y="124" width="212" height="26" rx="3"/>
+        <text class="t-arrow" x="50" y="234">box from live OCR — tight on the text</text>
+
+        <text class="t-lane" x="352" y="140" fill="var(--faint)">same</text>
+        <text class="t-lane" x="352" y="154" fill="var(--faint)">rect</text>
+        <path class="flow" d="M348 168 L392 168" marker-end="url(#ah4)"/>
+        <defs>
+          <marker id="ah4" viewBox="0 0 8 6" refX="7.5" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+            <polygon class="ahead" points="0,0 8,3 0,6"/>
+          </marker>
+        </defs>
+
+        <text class="t-lane" x="410" y="36" fill="var(--bad)">Still capture · 4:3, wider field of view</text>
+
+        <rect class="frame" x="410" y="46" width="250" height="188" rx="5"/>
+        <rect class="glyph" x="437" y="118" width="153" height="7" rx="2"/>
+        <rect class="glyph-hot" x="437" y="150" width="156" height="11" rx="2"/>
+        <rect class="glyph" x="437" y="181" width="117" height="7" rx="2"/>
+        <rect class="ghostbox" x="433" y="119" width="186" height="26" rx="3"/>
+        <text class="t-arrow" x="410" y="254">same normalised rect — wrong content</text>
+      </svg>
+
+      <figcaption>
+        Both frames come from the same physical sensor. What differs is <b>aspect ratio</b> (16:9
+        against 4:3), <b>field of view</b>, and the <b>stabilisation crop</b> applied to the preview
+        stream but not the still — and on devices exposing <code>LOGICAL_MULTI_CAMERA</code>, the
+        HAL may swap physical sensors underneath as well. Identical normalised coordinates therefore
+        address different scene content, so a box computed on one stream cannot be drawn on the other.
+      </figcaption>
+    </figure>
+
+    <div class="col">
+      <p>
+        Re-running OCR on the still avoids the mapping problem but introduces a worse one: the still
+        may segment sentences differently, or miss one the preview caught. A user who tapped capture
+        on three confirmed boxes would get two, and the box would have been a lie.
+      </p>
+      <p>
+        Freezing the preview frame instead costs resolution and nothing else. Request the highest
+        analysis resolution the device sustains — 1080p is typical, and ample for text at reading
+        distance. When text is genuinely too small, the answer is camera zoom, which is applied
+        before capture and so moves the boxes and the frozen frame together.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>Frame pacing</h2>
+      <p class="lede">
+        OCR runs slower than frames arrive. What you do with the surplus decides whether the boxes
+        track reality or drift behind it.
+      </p>
+    </div>
+
+    <figure class="fig">
+      <svg viewBox="0 0 720 340" role="img" aria-label="Two timelines comparing frame-handling strategies. In the first, every arriving frame is queued, so OCR processes frames one, two, three and four in sequence while later frames pile up, and frame four waits three passes before being processed. In the second, frames are dropped while OCR is busy, so each pass starts on the newest available frame — frames one, five, nine and thirteen — and lag never exceeds a single pass.">
+        <defs>
+          <marker id="ah2" viewBox="0 0 8 6" refX="7.5" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+            <polygon class="ahead" points="0,0 8,3 0,6"/>
+          </marker>
+          <marker id="ah2b" viewBox="0 0 8 6" refX="0.5" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+            <polygon class="ahead" points="8,0 0,3 8,6"/>
+          </marker>
+        </defs>
+
+        <text class="t-lane" x="40" y="32" fill="var(--bad)">Queue every frame</text>
+
+        <line class="axis" x1="52" y1="76" x2="690" y2="76"/>
+        <line class="tick" x1="60"  y1="70" x2="60"  y2="82"/>
+        <line class="tick" x1="100" y1="70" x2="100" y2="82"/>
+        <line class="tick" x1="140" y1="70" x2="140" y2="82"/>
+        <line class="tick" x1="180" y1="70" x2="180" y2="82"/>
+        <line class="tick" x1="220" y1="70" x2="220" y2="82"/>
+        <line class="tick" x1="260" y1="70" x2="260" y2="82"/>
+        <line class="tick" x1="300" y1="70" x2="300" y2="82"/>
+        <line class="tick" x1="340" y1="70" x2="340" y2="82"/>
+        <line class="tick" x1="380" y1="70" x2="380" y2="82"/>
+        <line class="tick" x1="420" y1="70" x2="420" y2="82"/>
+        <line class="tick" x1="460" y1="70" x2="460" y2="82"/>
+        <line class="tick" x1="500" y1="70" x2="500" y2="82"/>
+        <line class="tick" x1="540" y1="70" x2="540" y2="82"/>
+        <line class="tick" x1="580" y1="70" x2="580" y2="82"/>
+        <line class="tick" x1="620" y1="70" x2="620" y2="82"/>
+        <line class="tick" x1="660" y1="70" x2="660" y2="82"/>
+        <text class="t-tick" x="60"  y="64" text-anchor="middle">f1</text>
+        <text class="t-tick" x="220" y="64" text-anchor="middle">f5</text>
+        <text class="t-tick" x="380" y="64" text-anchor="middle">f9</text>
+        <text class="t-tick" x="540" y="64" text-anchor="middle">f13</text>
+        <text class="t-tick" x="46" y="80" text-anchor="end">frames</text>
+
+        <rect class="box-bad" x="60"  y="92" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="131" y="109" text-anchor="middle">OCR f1</text>
+        <rect class="box-bad" x="205" y="92" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="276" y="109" text-anchor="middle">OCR f2</text>
+        <rect class="box-bad" x="350" y="92" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="421" y="109" text-anchor="middle">OCR f3</text>
+        <rect class="box-bad" x="495" y="92" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="566" y="109" text-anchor="middle">OCR f4</text>
+
+        <line class="lead" x1="180" y1="82"  x2="180" y2="146"/>
+        <line class="lead" x1="495" y1="118" x2="495" y2="146"/>
+        <path class="flow" d="M182 146 L493 146" marker-end="url(#ah2)" marker-start="url(#ah2b)"/>
+        <text class="t-arrow" x="337" y="164" text-anchor="middle">f4 sits in the queue for three passes</text>
+
+        <text class="t-lane lane-n" x="40" y="212">Drop while busy</text>
+
+        <line class="axis" x1="52" y1="252" x2="690" y2="252"/>
+        <line class="tick-hot" x1="60"  y1="244" x2="60"  y2="260"/>
+        <line class="tick-dim" x1="100" y1="248" x2="100" y2="256"/>
+        <line class="tick-dim" x1="140" y1="248" x2="140" y2="256"/>
+        <line class="tick-dim" x1="180" y1="248" x2="180" y2="256"/>
+        <line class="tick-hot" x1="220" y1="244" x2="220" y2="260"/>
+        <line class="tick-dim" x1="260" y1="248" x2="260" y2="256"/>
+        <line class="tick-dim" x1="300" y1="248" x2="300" y2="256"/>
+        <line class="tick-dim" x1="340" y1="248" x2="340" y2="256"/>
+        <line class="tick-hot" x1="380" y1="244" x2="380" y2="260"/>
+        <line class="tick-dim" x1="420" y1="248" x2="420" y2="256"/>
+        <line class="tick-dim" x1="460" y1="248" x2="460" y2="256"/>
+        <line class="tick-dim" x1="500" y1="248" x2="500" y2="256"/>
+        <line class="tick-hot" x1="540" y1="244" x2="540" y2="260"/>
+        <line class="tick-dim" x1="580" y1="248" x2="580" y2="256"/>
+        <line class="tick-dim" x1="620" y1="248" x2="620" y2="256"/>
+        <line class="tick-dim" x1="660" y1="248" x2="660" y2="256"/>
+        <text class="t-tick" x="60"  y="238" text-anchor="middle">f1</text>
+        <text class="t-tick" x="220" y="238" text-anchor="middle">f5</text>
+        <text class="t-tick" x="380" y="238" text-anchor="middle">f9</text>
+        <text class="t-tick" x="540" y="238" text-anchor="middle">f13</text>
+        <text class="t-tick" x="46" y="256" text-anchor="end">frames</text>
+
+        <rect class="box-n" x="60"  y="268" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="131" y="285" text-anchor="middle">OCR f1</text>
+        <rect class="box-n" x="205" y="268" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="276" y="285" text-anchor="middle">OCR f5</text>
+        <rect class="box-n" x="350" y="268" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="421" y="285" text-anchor="middle">OCR f9</text>
+        <rect class="box-n" x="495" y="268" width="143" height="26" rx="3"/>
+        <text class="t-blk" x="566" y="285" text-anchor="middle">OCR f13</text>
+
+        <text class="t-arrow" x="337" y="316" text-anchor="middle">each pass starts on the newest frame available</text>
+      </svg>
+
+      <figcaption>
+        Same arrival rate, same OCR cost — only the discard policy differs. <b>Queueing</b> lets the
+        backlog grow without bound, so boxes fall further behind the viewfinder every second the
+        camera stays open. <b>Dropping</b> caps lag at one pass, permanently. The dimmed ticks are
+        frames never analysed, and never needed.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>The widened payload</h2>
+      <p class="lede">
+        Word, sentence and translation are what the user chose. The other five fields are what the
+        pipeline already knew at that moment — and could not cheaply recover afterwards.
+      </p>
+    </div>
+
+    <figure class="fig">
+      <svg viewBox="0 0 760 460" role="img" aria-label="Provenance diagram for the CardRequest payload. The final OCR pass supplies the Sentence field. The NMeCab tokeniser supplies Surface, DictionaryForm, Reading, PartOfSpeech and SpanInSentence. The user's selection supplies Translation. JMdict combined with model ranking supplies AlternativeSenses.">
+        <defs>
+          <marker id="ah3" viewBox="0 0 8 6" refX="7.5" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+            <polygon class="ahead" points="0,0 8,3 0,6"/>
+          </marker>
+        </defs>
+
+        <text class="t-lane" x="30" y="42" fill="var(--faint)">Produced by</text>
+
+        <rect class="box-n" x="30" y="104" width="180" height="36" rx="6"/>
+        <text class="t-title" x="46" y="127">Final OCR pass</text>
+
+        <rect class="box-n" x="30" y="216" width="180" height="36" rx="6"/>
+        <text class="t-title" x="46" y="239">NMeCab tokeniser</text>
+
+        <rect class="box-w" x="30" y="325" width="180" height="34" rx="6"/>
+        <text class="t-title" x="46" y="347">User selection</text>
+
+        <rect class="box-w" x="30" y="361" width="180" height="34" rx="6"/>
+        <text class="t-title" x="46" y="383">JMdict + ranking</text>
+
+        <path class="flow" d="M210 122 C 252 122, 268 126, 304 126" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 234 C 252 234, 262 162, 304 162" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 234 C 252 234, 262 198, 304 198" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 234 C 252 234, 268 234, 304 234" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 234 C 252 234, 262 270, 304 270" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 234 C 252 234, 262 306, 304 306" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 342 C 252 342, 268 342, 304 342" marker-end="url(#ah3)"/>
+        <path class="flow" d="M210 378 C 252 378, 268 378, 304 378" marker-end="url(#ah3)"/>
+
+        <rect class="box-p" x="310" y="62" width="420" height="338" rx="8"/>
+        <text class="t-title t-mono" x="328" y="88">CardRequest</text>
+        <line class="rowline" x1="310" y1="100" x2="730" y2="100"/>
+
+        <text class="t-field fname-n" x="328" y="130">Sentence</text>
+        <text class="t-ex jp" x="520" y="130">毎朝ご飯を食べました</text>
+        <line class="rowline" x1="328" y1="142" x2="712" y2="142"/>
+
+        <text class="t-field fname-n" x="328" y="166">Surface</text>
+        <text class="t-ex jp" x="520" y="166">食べました</text>
+        <line class="rowline" x1="328" y1="178" x2="712" y2="178"/>
+
+        <text class="t-field fname-n" x="328" y="202">DictionaryForm</text>
+        <text class="t-ex jp" x="520" y="202">食べる</text>
+        <line class="rowline" x1="328" y1="214" x2="712" y2="214"/>
+
+        <text class="t-field fname-n" x="328" y="238">Reading</text>
+        <text class="t-ex jp" x="520" y="238">たべる</text>
+        <line class="rowline" x1="328" y1="250" x2="712" y2="250"/>
+
+        <text class="t-field fname-n" x="328" y="274">PartOfSpeech</text>
+        <text class="t-ex" x="520" y="274">verb · ichidan</text>
+        <line class="rowline" x1="328" y1="286" x2="712" y2="286"/>
+
+        <text class="t-field fname-n" x="328" y="310">SpanInSentence</text>
+        <text class="t-ex" x="520" y="310">[5, 10)</text>
+        <line class="rowline" x1="328" y1="322" x2="712" y2="322"/>
+
+        <text class="t-field fname-w" x="328" y="346">Translation</text>
+        <text class="t-ex" x="520" y="346">“ate”</text>
+        <line class="rowline" x1="328" y1="358" x2="712" y2="358"/>
+
+        <text class="t-field fname-w" x="328" y="382">AlternativeSenses</text>
+        <text class="t-ex" x="520" y="382">live on · take (a meal)</text>
+      </svg>
+
+      <figcaption>
+        Every arrow is a field that exists only because some earlier stage produced it. The six
+        indigo fields all come from passes that have finished by the time the user taps — which is
+        exactly why they are cheap to carry and expensive to rebuild.
+      </figcaption>
+    </figure>
+
+    <div class="col">
+      <pre><code><span class="cm">// Emitted when the user commits to a sense.</span>
+<span class="kw">public sealed record</span> CardRequest(
+    <span class="kw">string</span>  Sentence,           <span class="cm">// final OCR pass — context, and the card back</span>
+    <span class="kw">string</span>  Surface,            <span class="cm">// as it appeared in the frame</span>
+    <span class="kw">string</span>? DictionaryForm,     <span class="cm">// lemma — what the card should actually teach</span>
+    <span class="kw">string</span>? Reading,            <span class="cm">// furigana</span>
+    <span class="kw">string</span>? PartOfSpeech,
+    Range   SpanInSentence,     <span class="cm">// char offsets — disambiguates repeats</span>
+    <span class="kw">string</span>  Translation,        <span class="cm">// the sense the user chose</span>
+    IReadOnlyList&lt;<span class="kw">string</span>&gt; AlternativeSenses);</code></pre>
+
+      <h3>Why carry all of it</h3>
+      <ul class="tight">
+        <li>
+          <strong>The lemma is the card.</strong> A frame reading
+          <span class="jp">食べました</span> should produce a card for
+          <span class="jp">食べる</span>. Only the tokeniser knows that, and only while it holds
+          the token.
+        </li>
+        <li>
+          <strong>The span disambiguates.</strong> If a word appears twice in one sentence, the
+          surface string alone cannot say which occurrence the user tapped. Character offsets can,
+          and they are what lets the card highlight the right one.
+        </li>
+        <li>
+          <strong>Recovering later means re-tokenising.</strong> Dropping these fields does not save
+          work; it defers the same NMeCab pass to a moment when you also have to re-locate the token.
+        </li>
+        <li>
+          <strong>Audio lookup wants the lemma, not the surface.</strong> Forvo has a recording for
+          <span class="jp">食べる</span>; it very likely has nothing for
+          <span class="jp">食べました</span>.
+        </li>
+      </ul>
+
+      <h3>The nullable three</h3>
+      <p>
+        <code>DictionaryForm</code>, <code>Reading</code> and <code>PartOfSpeech</code> are nullable
+        on purpose. A manual drag-selection can land on something that is not a token —
+        half a compound, a particle plus a stem — and there is no lemma to report. The card builder
+        needs to handle that case rather than assume the tokeniser always had an answer.
+      </p>
+    </div>
+  </section>
+
+</div>
