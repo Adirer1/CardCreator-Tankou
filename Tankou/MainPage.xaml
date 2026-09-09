@@ -3,12 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Tankou"
              xmlns:components="clr-namespace:Tankou.Components"
+             xmlns:draw="http://schemas.appomobi.com/drawnUi/2023/draw"
+             xmlns:camera="clr-namespace:DrawnUi.Camera;assembly=DrawnUi.Maui.Camera"
              x:Class="Tankou.MainPage">
 
-    <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
-        <BlazorWebView.RootComponents>
-            <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
-        </BlazorWebView.RootComponents>
-    </BlazorWebView>
+    <Grid>
+        <draw:Canvas x:Name="cameraCanvas" HorizontalOptions="Fill" VerticalOptions="Fill">
+            <camera:SkiaCamera x:Name="cameraView" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" />
+        </draw:Canvas>
+
+        <BlazorWebView IsVisible="False" x:Name="blazorWebView" HostPage="wwwroot/index.html">
+            <BlazorWebView.RootComponents>
+                <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
+            </BlazorWebView.RootComponents>
+        </BlazorWebView>
+        
+        <Label x:Name="statusLabel" IsVisible="False" HorizontalOptions="Center" VerticalOptions="Center" HorizontalTextAlignment="Center" TextColor="White" />
+    </Grid>
 
 </ContentPage>
