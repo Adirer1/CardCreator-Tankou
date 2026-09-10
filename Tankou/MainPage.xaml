@@ -5,11 +5,12 @@
              xmlns:components="clr-namespace:Tankou.Components"
              xmlns:draw="http://schemas.appomobi.com/drawnUi/2023/draw"
              xmlns:camera="clr-namespace:DrawnUi.Camera;assembly=DrawnUi.Maui.Camera"
+             xmlns:native="clr-namespace:Tankou.Components.Pages.Native"
              x:Class="Tankou.MainPage">
 
     <Grid>
         <draw:Canvas x:Name="cameraCanvas" HorizontalOptions="Fill" VerticalOptions="Fill">
-            <camera:SkiaCamera x:Name="cameraView" NeedPermissionsSet="Camera" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" />
+            <native:ScannerCamera x:Name="cameraView" NeedPermissionsSet="Camera" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" />
         </draw:Canvas>
 
         <BlazorWebView IsVisible="False" x:Name="blazorWebView" HostPage="wwwroot/index.html">
