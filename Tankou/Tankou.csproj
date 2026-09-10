@@ -91,4 +91,8 @@
       <Folder Include="Services\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Tankou.Core\Tankou.Core.csproj" />
+    </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="Tankou.Core/Tankou.Core.csproj" Id="41920963-1f71-4e79-8dc8-de8da1a5a67a" />
   <Project Path="Tankou/Tankou.csproj">
     <Deploy Solution="Debug|*" />
   </Project>
