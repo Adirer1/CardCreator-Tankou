@@ -9,7 +9,7 @@
 
     <Grid>
         <draw:Canvas x:Name="cameraCanvas" HorizontalOptions="Fill" VerticalOptions="Fill">
-            <camera:SkiaCamera x:Name="cameraView" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" />
+            <camera:SkiaCamera x:Name="cameraView" NeedPermissionsSet="Camera" Aspect="AspectFill" HorizontalOptions="Fill" VerticalOptions="Fill" />
         </draw:Canvas>
 
         <BlazorWebView IsVisible="False" x:Name="blazorWebView" HostPage="wwwroot/index.html">

@@ -1,3 +1,5 @@
+
+
 namespace Tankou
 {
     public partial class MainPage : ContentPage
@@ -5,58 +7,44 @@ namespace Tankou
         public MainPage()
         {
             InitializeComponent();
+            cameraView.OnError += OnCameraError;
+            cameraView.PermissionsResult += OnPermissionsResult;
         }
 
-        bool cameraStarted = false;
-        protected override async void OnAppearing()
+
+        protected override void OnAppearing()
         {
             base.OnAppearing();
-            await StartCameraAsync();
+            cameraView.IsOn = true;
         }
 
-        async Task StartCameraAsync()
-        {
-            if (!cameraStarted)
-            {
-
-                PermissionStatus current = await Permissions.CheckStatusAsync<Permissions.Camera>();
-                if (current != PermissionStatus.Granted)
-                {
-                    current = await Permissions.RequestAsync<Permissions.Camera>();
-                    if (current != PermissionStatus.Granted)
-                    {
-                        statusLabel.IsVisible = true;
-                        statusLabel.Text = $"Camera permission status: {current}";
-                        return;
-                    }
-
-                }
-
-                try
-                {
-                    cameraView.Start();
-                }
-                catch (Exception ex)
-                {
-                    statusLabel.IsVisible = true;
-                    statusLabel.Text = $"{ex.Message}";
-                    return;
-                }
-
-                cameraStarted = true;
-
-                //await CameraView.StartCameraAsync();
-            }
-            else return;
-        }
+        
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            if (cameraStarted)
+            cameraView.IsOn = false;
+        }
+
+        void OnCameraError(object? sender, string message)
+        {
+          ShowStatusLabel(message);
+        }
+
+        void OnPermissionsResult(object? sender, bool granted)
+        {
+            if (!granted)
             {
-                cameraView.Stop();
-                cameraStarted = false;
+                ShowStatusLabel("Camera permission denied. Please enable it in settings.");
             }
+        }
+
+        void ShowStatusLabel(string message)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                statusLabel.Text = message;
+                statusLabel.IsVisible = true;
+            });
         }
     }
 }
